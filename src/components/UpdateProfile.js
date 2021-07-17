@@ -2,39 +2,50 @@ import React, { useRef, useState } from "react";
 import { Form, Button, Card, Alert } from "react-bootstrap";
 import { useAuth } from "../contexts/AuthContext";
 import { Link, useHistory } from "react-router-dom";
+import "./UpdateProfile.css";
 
-export default function Signup() {
+export default function UpdateProfile() {
 	const emailRef = useRef();
 	const passwordRef = useRef();
 	const passwordConfirmationRef = useRef();
-	const { signup } = useAuth();
+	const { currentUser, updateEmail, updatePassword } = useAuth();
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 	const history = useHistory();
 
-	async function handleSubmit(e) {
+	function handleSubmit(e) {
 		e.preventDefault();
-
 		if (passwordRef.current.value !== passwordConfirmationRef.current.value) {
 			return setError("Passwords do not match");
 		}
 
-		try {
-			setError("");
-			setLoading(true);
-			await signup(emailRef.current.value, passwordRef.current.value);
-			history.push("/login");
-		} catch {
-			setError("Failed to create an account");
+		const promises = [];
+		setError("");
+		setLoading(true);
+		if (emailRef.current.value !== currentUser.email) {
+			promises.push(updateEmail(emailRef.current.value));
 		}
-		setLoading(false);
+		if (passwordRef.current.value) {
+			promises.push(updatePassword(passwordRef.current.value));
+		}
+
+		Promise.all(promises)
+			.then(() => {
+				history.push("/");
+			})
+			.catch(() => {
+				setError("Failed to update account");
+			})
+			.finally(() => {
+				setLoading(false);
+			});
 	}
 
 	return (
 		<>
 			<Card>
 				<Card.Body>
-					<h2 className='text-center mb-4'>Sign Up</h2>
+					<h2 className='text-center mb-4'>Update Profile</h2>
 					{error && <Alert variant='danger'>{error}</Alert>}
 					<Form onSubmit={handleSubmit}>
 						<Form.Group id='email'>
@@ -43,6 +54,7 @@ export default function Signup() {
 								type='email'
 								ref={emailRef}
 								required
+								defaultValue={currentUser.email}
 								className=' rounded-0'
 							/>
 						</Form.Group>
@@ -51,7 +63,7 @@ export default function Signup() {
 							<Form.Control
 								type='password'
 								ref={passwordRef}
-								required
+								placeholder='Leave blank to keep the same'
 								className=' rounded-0'
 							/>
 						</Form.Group>
@@ -61,7 +73,7 @@ export default function Signup() {
 								className=' rounded-0'
 								type='password'
 								ref={passwordConfirmationRef}
-								required
+								placeholder='Leave blank to keep the same'
 							/>
 						</Form.Group>
 						<Button
@@ -69,13 +81,13 @@ export default function Signup() {
 							type='submit'
 							className='w-100 mt-3 rounded-0'
 						>
-							Signed Up
+							Update
 						</Button>
 					</Form>
 				</Card.Body>
 			</Card>
 			<div className='w-100 text-center mt-2'>
-				Already have an account? <Link to='/login'>Log In</Link>
+				<Link to='/'>Cancel</Link>
 			</div>
 		</>
 	);

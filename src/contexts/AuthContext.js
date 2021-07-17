@@ -9,6 +9,7 @@ export function useAuth() {
 
 export default function AuthProvider({ children }) {
 	const [currentUser, setCurrentUser] = useState();
+	const [loading, setLoading] = useState(true);
 
 	function signup(email, password) {
 		console.log("email in authContext", email);
@@ -16,9 +17,32 @@ export default function AuthProvider({ children }) {
 		return auth.createUserWithEmailAndPassword(email, password);
 	}
 
+	function login(email, password) {
+		console.log("email in authContext", email);
+		console.log("password in authContext", password);
+		return auth.signInWithEmailAndPassword(email, password);
+	}
+
+	function logout() {
+		return auth.signOut();
+	}
+
+	function resetPassword(email) {
+		return auth.sendPasswordResetEmail(email);
+	}
+
+	function updateEmail(email) {
+		return currentUser.updateEmail(email);
+	}
+
+	function updatePassword(password) {
+		return currentUser.updatePassword(password);
+	}
+
 	useEffect(() => {
 		const unsubscribe = auth.onAuthStateChanged((user) => {
 			setCurrentUser(user);
+			setLoading(false);
 		});
 
 		return unsubscribe;
@@ -26,8 +50,17 @@ export default function AuthProvider({ children }) {
 
 	const value = {
 		currentUser,
-		signup
+		signup,
+		login,
+		logout,
+		resetPassword,
+		updateEmail,
+		updatePassword
 	};
 
-	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+	return (
+		<AuthContext.Provider value={value}>
+			{!loading && children}
+		</AuthContext.Provider>
+	);
 }
